@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="SSM.Mapper.ApplicationFilesDAO">
+
+
+
+    <resultMap id="appfilesResult" type="SSM.pojo.ApplicationFiles">
+        <id column="app_id" property="appId"/>
+        <result column="app_time" property="appTime"/>
+        <result column="app_text" property="appText"/>
+        <result property="sId" column="s_id"/>
+<!--        <result property="cId" column="c_id"/>-->
+        <association property="student" javaType="SSM.pojo.Student" autoMapping="true"/>
+<!--            <id property="sId" column="s_id"/>-->
+<!--            <result column="s_name" property="sName"/>-->
+<!--            <result property="sSex" column="s_sex"/>-->
+<!--            <result column="s_nation" property="sNation"/>-->
+<!--            <result property="sClass" column="s_class"/>-->
+<!--            <result column="s_tel" property="sTel"/>-->
+<!--            <result column="s_politic" property="sPolitic"/>-->
+<!--            <result column="s_state" property="sState"/>-->
+<!--            <result column="s_register" property="sRegister"/>-->
+<!--            <result column="s_apply" property="sApply"/>-->
+<!--        </association>-->
+<!--        <association property="checkFile" javaType="SSM.pojo.CheckFile" autoMapping="true"/>-->
+<!--            <id property="cId" column="c_id"/>-->
+<!--            <result column="c_state" property="cState"/>-->
+<!--            <result column="c_text" property="cText"/>-->
+<!--            <result column="c_time" property="cTime"/>-->
+<!--        </association>-->
+    </resultMap>
+
+    <!--  文件对象属性 与 数据库表的映射  传入数据库 -->
+    <parameterMap id="filesParam" type="SSM.pojo.ApplicationFiles">
+        <parameter property="appId" resultMap="appfilesResult"/>
+        <parameter property="appTime" resultMap="appfilesResult"/>
+        <parameter property="sId" resultMap="appfilesResult"/>
+        <parameter property="appText" resultMap="appfilesResult"/>
+    </parameterMap>
+
+
+    <!-- 查询所有文件  -->
+    <select id="selectAllApplicationFiles" resultMap="appfilesResult">
+        select *
+        from application_files
+</select>
+
+    <!-- 根据ID查询文件  -->
+    <select id="selectApplicationFilesByAPPID" resultMap="appfilesResult" parameterType="Integer">
+        select *
+        from application_files where app_id = #{appId}
+    </select>
+
+    <!-- 批量删除文件数据  -->
+    <delete id="deleteApplicationFilesByAPPIDS" parameterMap="filesParam">
+        delete from application_files
+    <where>
+            app_id in
+        <foreach collection="array" item="appId" separator="," open="(" close=")">
+                #{appId}
+        </foreach>
+    </where>
+    </delete>
+
+    <!-- 批量删除文件数据  -->
+    <delete id="deleteApplicationFilesBySIDs" parameterMap="filesParam">
+        delete from application_files
+        <where>
+            s_id in
+            <foreach collection="array" item="sId" separator="," open="(" close=")">
+                #{sId}
+            </foreach>
+        </where>
+    </delete>
+
+
+    <!-- 更新文件数据  -->
+    <update id="updateApplicationFiles" parameterMap="filesParam">
+        update application_files
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="appTime!=null">
+                app_time=#{appTime},
+            </if>
+            <if test="appText!=null and appText!=''">
+                app_text=#{appText},
+            </if>
+        </trim>
+        where app_id = #{appId}
+    </update>
+
+        <!--  新增文件数据  keyProperty="fId" useGeneratedKeys="true" 主键回填 -->
+    <insert id="insertApplicationFiles" parameterMap="filesParam" keyProperty="app_id" useGeneratedKeys="true">
+        <selectKey keyProperty="appId" resultType="Integer" order="AFTER">
+            select last_insert_id()
+        </selectKey>
+        insert into application_files (app_id, app_time, app_text, s_id) values
+        (null,#{appTime},#{appText},#{sId})
+    </insert>
+
+    <!--  根据 ID 删除文件  -->
+    <delete id="deleteApplicationFilesByAPPID" parameterType="Integer">
+        delete from application_files
+        where app_id = #{appId}
+    </delete>
+
+
+    <!--  查询 入党申请书的学生信息  -->
+    <select id="selectStudentByAPPID" resultMap="appfilesResult" parameterType="Integer">
+        select
+               s.*
+        from application_files af
+        join student s on af.s_id = s.s_id
+        where app_id = #{appId}
+    </select>
+
+<!--    &lt;!&ndash;  查询 入党申请书的审核信息  &ndash;&gt;-->
+    <select id="selectAllApplicationFilesID" resultType="Integer">
+        select app_id
+        from application_files
+    </select>
+
+    <!--    &lt;!&ndash;  查询 入党申请书的审核信息  &ndash;&gt;-->
+    <select id="selectAllApplicationFilesIDBySIDS" resultType="Integer" parameterMap="filesParam">
+        select app_id
+        from application_files
+        <where>
+            s_id in
+            <foreach collection="array" item="sId" separator="," open="(" close=")">
+                #{sId}
+            </foreach>
+        </where>
+    </select>
+
+</mapper>

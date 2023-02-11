@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="SSM.Mapper.CommunicateDAO">
+
+
+    <!--  交流园地对象属性 与 数据库表的映射 传入对象 -->
+    <resultMap id="commuResult" type="SSM.pojo.Communicate">
+        <id column="ac_number" property="acNumber" javaType="Integer"/>
+        <result column="ac_time" property="acTime"/>
+        <result column="ac_content" property="acContent"/>
+    </resultMap>
+
+
+
+    <!--  交流园地对象属性 与 数据库表的映射  传入数据库 -->
+    <parameterMap id="commuParam" type="SSM.pojo.Communicate">
+        <parameter property="acNumber" resultMap="commuResult"/>
+        <parameter property="acTime" resultMap="commuResult"/>
+        <parameter property="acContent" resultMap="commuResult"/>
+    </parameterMap>
+
+
+    <!-- 查询所有交流园地  -->
+    <select id="selectAllCommunicates" resultMap="commuResult">
+        select *
+        from communicate
+</select>
+
+    <!-- 根据ID查询交流园地  -->
+    <select id="selectCommunicateByAcNumber" resultMap="commuResult" parameterType="Integer">
+        select *
+        from communicate where ac_number = #{acNumber}
+    </select>
+
+    <!-- 批量删除交流园地数据  -->
+    <delete id="deleteCommunicateByAcNumberS" parameterMap="commuParam">
+        delete from communicate
+    <where>
+        ac_number  in
+        <foreach collection="array" item="acNumber" separator="," open="(" close=")">
+                #{acNumber}
+        </foreach>
+    </where>
+    </delete>
+
+    <!-- 更新交流园地数据  -->
+    <update id="updateCommunicate" parameterMap="commuParam">
+        update communicate
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="acTime!=null">
+                ac_time=#{acTime},
+            </if>
+            <if test="acContent!=null and acContent!=''">
+                ac_content=#{acContent},
+            </if>
+        </trim>
+        where ac_number = #{acNumber}
+    </update>
+
+        <!--  新增交流园地数据  -->
+    <insert id="insertCommunicate" parameterMap="commuParam" keyProperty="ac_number" useGeneratedKeys="true">
+        <selectKey keyProperty="acNumber" resultType="Integer" order="AFTER">
+            select last_insert_id()
+        </selectKey>
+        insert into communicate (ac_number, ac_time, ac_content) values
+        (null,#{acTime},#{acContent})
+    </insert>
+
+    <!--  根据 ID 删除交流园地  -->
+    <delete id="deletecommuAttachByID" parameterType="Integer">
+        delete from communicate
+        where ac_number = #{acNumber}
+    </delete>
+
+</mapper>

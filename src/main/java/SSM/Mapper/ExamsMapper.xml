@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="SSM.Mapper.ExamsDAO">
+    
+    <resultMap id="examsResult" type="SSM.pojo.ExamFile">
+        <id column="s_id" property="sId"/>
+        <result column="e_career" property="eCareer"/>
+        <result column="e_mass" property="eMass"/>
+        <result column="e_counsellor" property="eCounsellor"/>
+        <result column="e_secretary" property="eSecretary"/>
+        <result column="e_grade" property="eGrade"/>
+    </resultMap>
+
+    <!--  量化考核对象属性 与 数据库表的映射  传入数据库 -->
+    <parameterMap id="examsParam" type="SSM.pojo.ExamFile">
+        <parameter property="sId" resultMap="examsResult"/>
+        <parameter property="eCareer" resultMap="examsResult"/>
+        <parameter property="eMass" resultMap="examsResult"/>
+        <parameter property="eCounsellor" resultMap="examsResult"/>
+        <parameter property="eSecretary" resultMap="examsResult"/>
+        <parameter property="eGrade" resultMap="examsResult"/>
+    </parameterMap>
+
+
+    <!-- 查询所有量化考核  -->
+    <select id="selectAllExamFiles" resultMap="examsResult">
+        select *
+        from exam_file
+</select>
+
+    <!-- 根据ID查询量化考核  -->
+    <select id="selectExamFileBySID" resultMap="examsResult" parameterType="String">
+        select *
+        from exam_file where s_id = #{sId}
+    </select>
+
+    <select id="selectExamFilesByCareer" resultMap="examsResult" parameterType="String">
+        select *
+        from exam_file where e_career = #{eCareer}
+    </select>
+
+    <!-- 批量删除量化考核数据  -->
+    <delete id="deleteExamFilesBySIDS" parameterType="String">
+        delete from exam_file
+    <where>
+            s_id in
+        <foreach collection="array" item="sId" separator="," open="(" close=")">
+                #{sId}
+        </foreach>
+    </where>
+    </delete>
+
+    <!-- 更新量化考核数据  -->
+    <update id="updateExamFile" parameterMap="examsParam">
+        update exam_file
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="eCareer!=null and eCareer!=''">
+                e_career=#{eCareer},
+            </if>
+            <if test="eMass!=null">
+                e_mass=#{eMass},
+            </if>
+            <if test="eCounsellor!=null">
+                e_counsellor=#{eCounsellor},
+            </if>
+            <if test="eSecretary!=null">
+                e_secretary=#{eSecretary},
+            </if>
+            <if test="eGrade!=null">
+                e_grade=#{eGrade},
+            </if>
+        </trim>
+        where s_id = #{sId}
+    </update>
+
+        <!--  新增量化考核数据 useGeneratedKeys="true" keyProperty="ccpId" 主键 -->
+    <insert id="insertExamFile" parameterMap="examsParam">
+        insert into exam_file (e_career, e_mass, e_counsellor, e_secretary, e_grade, s_id) values
+        (#{eCareer},#{eMass},#{eCounsellor},#{eSecretary},#{eGrade},#{sId})
+    </insert>
+
+    <!--  根据 ID 删除量化考核  -->
+    <delete id="deleteExamFileBySID" parameterType="String">
+        delete from exam_file
+        where s_id = #{sId}
+    </delete>
+</mapper>

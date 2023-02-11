@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="SSM.Mapper.StudentDAO">
+
+
+    <!--  学生对象属性 与 数据库表的映射 传入对象 -->
+    <resultMap id="stuResult" type="SSM.pojo.Student">
+        <id column="s_id" property="sId"/>
+        <result column="s_password" property="sPassword"/>
+        <result column="s_name" property="sName"/>
+        <result column="s_sex" property="sSex"/>
+        <result column="s_nation" property="sNation"/>
+        <result column="s_register" property="sRegister"/>
+        <result column="s_class" property="sClass"/>
+        <result column="s_tel" property="sTel"/>
+        <result column="s_state" property="sState"/>
+        <result column="s_politic" property="sPolitic"/>
+        <result column="s_apply" property="sApply"/>
+        <result column="s_activist" property="sActivist"/>
+        <result column="s_develop" property="sDevelop"/>
+        <result column="s_probationer" property="sProbationer"/>
+        <result column="s_communist" property="sCommunist"/>
+    </resultMap>
+
+    <!--  学生对象属性 与 数据库表的映射  传入数据库 -->
+    <parameterMap id="stuParam" type="SSM.pojo.Student">
+        <parameter property="sId" resultMap="stuResult"/>
+        <parameter property="sPassword" resultMap="stuResult"/>
+        <parameter property="sName" resultMap="stuResult"/>
+        <parameter property="sSex" resultMap="stuResult"/>
+        <parameter property="sNation" resultMap="stuResult"/>
+        <parameter property="sRegister" resultMap="stuResult"/>
+        <parameter property="sClass" resultMap="stuResult"/>
+        <parameter property="sTel" resultMap="stuResult"/>
+        <parameter property="sState" resultMap="stuResult"/>
+        <parameter property="sPolitic" resultMap="stuResult"/>
+        <parameter property="sApply" resultMap="stuResult"/>
+        <parameter property="sActivist" resultMap="stuResult"/>
+        <parameter property="sDevelop" resultMap="stuResult"/>
+        <parameter property="sProbationer" resultMap="stuResult"/>
+        <parameter property="sCommunist" resultMap="stuResult"/>
+    </parameterMap>
+
+
+    <!-- 查询所有学生  -->
+    <select id="selectAllStudents" resultMap="stuResult">
+        select *
+        from student
+</select>
+
+    <!-- 查询所有学生 ID -->
+    <select id="selectAllStudentsID" resultType="String">
+        select s_id
+        from student
+    </select>
+
+    <!-- 根据ID查询学生  -->
+    <select id="selectStudentByID" resultMap="stuResult" parameterType="String">
+        select *
+        from student where s_id = #{sId}
+    </select>
+
+    <!-- 批量删除学生数据  -->
+    <delete id="deleteStudentsBySIDS" parameterType="String">
+        delete from student
+    <where>
+            s_id in
+        <foreach collection="array" item="sId" separator="," open="(" close=")">
+                #{sId}
+        </foreach>
+    </where>
+    </delete>
+
+    <!-- 更新学生数据  -->
+    <update id="updateStudent" parameterMap="stuParam">
+        update student
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="sPassword!=null and sPassword!=''">
+                s_password=#{sPassword},
+            </if>
+            <if test="sName!=null and sName!=''">
+                s_name=#{sName},
+            </if>
+            <if test="sSex!=null and sSex!=''">
+                s_sex=#{sSex},
+            </if>
+            <if test="sNation!=null and sNation!=''">
+                s_nation=#{sNation},
+            </if>
+            <if test="sRegister!=null and sRegister!=''">
+                s_register=#{sRegister},
+            </if>
+            <if test="sClass!=null and sClass!=''">
+                s_class=#{sClass},
+            </if>
+            <if test="sTel!=null and sTel!=''">
+                s_tel=#{sTel},
+            </if>
+            <if test="sState!=null">
+                s_state=#{sState},
+            </if>
+            <if test="sPolitic!=null and sPolitic!=''">
+                s_politic=#{sPolitic},
+            </if>
+        </trim>
+        where s_id = #{sId}
+    </update>
+
+        <!--  新增学生数据 keyProperty="sId" useGeneratedKeys="true" 主键回填 -->
+    <insert id="insertStudent" parameterMap="stuParam">
+        insert into student (s_id, s_name, s_password, s_sex, s_nation, s_class, s_tel, s_politic, s_state, s_register, s_apply, s_activist, s_develop, s_probationer, s_communist) values
+        (#{sId},#{sName},#{sPassword},#{sSex},#{sNation},#{sClass},#{sTel}
+        ,#{sPolitic},#{sState},#{sRegister},#{sApply},#{sActivist},#{sDevelop},#{sProbationer},#{sCommunist})
+    </insert>
+
+    <!--  根据 ID 删除学生  -->
+    <delete id="deleteStudentByID" parameterType="String">
+        delete from student
+        where s_id = #{sId}
+    </delete>
+
+    <select id="selectStudentByName" resultMap="stuResult" parameterType="String">
+        select *
+        from student where s_name = #{sName}
+    </select>
+</mapper>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="SSM.Mapper.AdminDAO">
+
+            <!--  管理员对象属性 与 数据库表的映射 传入对象
+             type： 要指定完整包名  -->
+    <resultMap id="adminResult" type="SSM.pojo.Admin">
+        <id column="ad_id" property="adId"/>
+        <result column="ad_password" property="adPassword"/>
+    </resultMap>
+
+    <!--  管理员对象属性 与 数据库表的映射  传入数据库 -->
+    <parameterMap id="adminParam" type="SSM.pojo.Admin">
+        <parameter property="adId" resultMap="adminResult"/>
+        <parameter property="adPassword" resultMap="adminResult"/>
+    </parameterMap>
+
+    <!-- 查询所有管理员  -->
+    <select id="selectAllAdmins" resultMap="adminResult">
+        select *
+        from admin
+</select>
+    <!-- 根据ID 查询管理员  -->
+    <select id="selectAdminByID" resultMap="adminResult" parameterType="String">
+        select *
+        from admin where ad_id = #{adId}
+    </select>
+
+    <!-- 更新管理员 信息  -->
+    <update id="updateAdmin" parameterMap="adminParam">
+            update admin
+            <trim prefix="SET" suffixOverrides=",">
+                <if test="adPassword!=null and adPassword!=''">
+                    ad_password=#{adPassword},
+                </if>
+                <if test="adName!=null and adName!=''">
+                    ad_name=#{adName},
+                </if>
+            </trim>
+            where ad_id = #{adId}
+        </update>
+
+    <!-- 添加管理员 信息  useGeneratedKeys="true" keyProperty="adId" 主键回填 -->
+    <insert id="insertAdmin" parameterMap="adminParam">
+        insert into admin (ad_id,ad_password) value
+        (#{adId},#{adPassword})
+    </insert>
+
+</mapper>

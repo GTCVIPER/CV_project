@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+
+    <!--配置文件参数化（参数占位化）-->
+    <context:property-placeholder location="classpath:db/jdbc.properties"/>
+
+    <!--与DruidDataSource集成 注入 dataSource -->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="initialSize" value="${initialSize}"/>
+        <property name="minIdle" value="${minIdle}"/>
+        <property name="maxActive" value="${maxActive}"/>
+        <property name="maxWait" value="${maxWait}"/>
+        <property name="timeBetweenEvictionRunsMillis" value="${timeBetweenEvictionRunsMillis}"/>
+        <property name="minEvictableIdleTimeMillis" value="${minEvictableIdleTimeMillis}"/>
+
+        <!-- 开启Druid的监控统计功能 -->
+        <!-- 注意如果要用log4j一定要加上log4j -->
+        <property name="filters" value="stat,log4j" />
+    </bean>
+
+    <!-- 配置：SqlSessionFactory
+                                  是工厂bean==》生成 SqlSessionFactory-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+
+        <!--      导入MyBatis配置文件      -->
+        <property name="configLocation" value="classpath:mybatis/mybatis-config.xml"/>
+
+        <!--   注入   dao-mapper文件信息      -->
+        <property name="mapperLocations">
+            <list>
+                <value>classpath*:SSM/Mapper/*.xml</value>
+            </list>
+        </property>
+        <!--   为dao-mapper文件中的实体类定义缺省包路径      -->
+        <property name="typeAliasesPackage" value="SSM.pojo"/>
+
+        <!--    配置 pageHelper    -->
+        <property name="plugins">
+            <array>
+                <bean class="com.github.pagehelper.PageInterceptor">
+                    <property name="properties">
+                        <props>
+                            <prop key="reasonable">true</prop>
+                            <prop key="helperDialect">mysql</prop>
+                        </props>
+                    </property>
+                </bean>
+            </array>
+        </property>
+    </bean>
+
+
+    <!--          管理DAO实现类的创建，并创建DAO对象
+                    MapperScannerConfigure
+
+                     注意DAO实现对象的 bean id为”首字母小写+DAO接口类名“
+
+                  MyBatis是通过DAOMapper文件和反射生成 mapper DAOImpl对象-->
+    <bean id="mapperScannerConfigurer9" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+
+        <!--   DAO接口所在包 | 如果有多个包，可以用逗号或分号分隔      -->
+        <property name="basePackage" value="SSM.Mapper"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+    </bean>
+
+
+    <!--       引入事务管理器，依赖DataSource，借以获得连接，
+                            进而控制事务逻辑-->
+    <bean id="tx" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!--   事务控制注解配置 | spring父工厂注解扫描范围 | 不扫描Controller类-->
+    <context:component-scan base-package="SSM">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+    <!--  告诉Spring 注解在定制事务时，基于  txManager         -->
+    <tx:annotation-driven transaction-manager="tx"/>
+
+    <!-- 添加配置，启动AOP注解| AOP动态代理-->
+    <aop:aspectj-autoproxy/>
+
+</beans>

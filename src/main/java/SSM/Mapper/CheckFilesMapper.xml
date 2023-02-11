@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="SSM.Mapper.CheckFilesDAO">
+
+
+    <!--  审核对象属性 与 数据库表的映射 传入对象 -->
+    <resultMap id="checkResult" type="SSM.pojo.CheckFile">
+        <id column="c_id" property="cId"/>
+        <result column="c_time" property="cTime"/>
+        <result column="c_text" property="cText"/>
+        <result column="c_state" property="cState"/>
+        <result column="p_id" property="pId"/>
+        <result column="app_id" property="appId"/>
+        <result column="c_state" property="cState"/>
+        <association property="pioneerFiles" javaType="SSM.pojo.PioneerFiles" autoMapping="true"/>
+        <association property="applicationFiles" javaType="SSM.pojo.ApplicationFiles" autoMapping="true"/>
+    </resultMap>
+
+
+
+    <!--  审核对象属性 与 数据库表的映射  传入数据库 -->
+    <parameterMap id="cultParam" type="SSM.pojo.CheckFile">
+        <parameter property="cId" resultMap="checkResult"/>
+        <parameter property="cTime" resultMap="checkResult"/>
+        <parameter property="cText" resultMap="checkResult"/>
+        <parameter property="cState" resultMap="checkResult"/>
+        <parameter property="pId" resultMap="checkResult"/>
+        <parameter property="appId" resultMap="checkResult"/>
+    </parameterMap>
+
+
+    <!-- 查询所有审核对象 -->
+    <select id="selectAllCheckFiles" resultMap="checkResult">
+        select *
+        from check_file
+</select>
+
+    <!-- 根据ID查询审核对象  -->
+    <select id="selectCheckFilesByCID" resultMap="checkResult" parameterType="Integer">
+        select *
+        from check_file where c_id = #{cId}
+    </select>
+
+    <!-- 批量删除审核对象数据  -->
+    <delete id="deleteCheckFilesBySCIDS" parameterMap="cultParam">
+        delete from check_file
+    <where>
+            c_id in
+        <foreach collection="array" item="cId" separator="," open="(" close=")">
+                #{cId}
+        </foreach>
+    </where>
+    </delete>
+
+    <!-- 批量删除审核对象数据  -->
+    <delete id="deleteCheckFilesBySAPPIDS" parameterMap="cultParam">
+        delete from check_file
+        <where>
+            app_id in
+            <foreach collection="array" item="appId" separator="," open="(" close=")">
+                #{appId}
+            </foreach>
+        </where>
+    </delete>
+
+    <!-- 批量删除审核对象数据  -->
+    <delete id="deleteCheckFilesBySPIDS" parameterMap="cultParam">
+        delete from check_file
+        <where>
+            p_id in
+            <foreach collection="array" item="pId" separator="," open="(" close=")">
+                #{pId}
+            </foreach>
+        </where>
+    </delete>
+
+    <!-- 更新审核对象数据  -->
+    <update id="updateCheckFiles" parameterMap="cultParam">
+        update check_file
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="cTime!=null">
+                c_time=#{cTime},
+            </if>
+            <if test="cText!=null and cText!=''">
+                c_text=#{cText},
+            </if>
+            <if test="cState!=null">
+                c_state=#{cState},
+            </if>
+        </trim>
+        where c_id = #{cId}
+    </update>
+
+        <!--  新增审核对象数据  -->
+    <insert id="insertCheckFiles" parameterMap="cultParam" keyProperty="c_id" useGeneratedKeys="true">
+        <selectKey keyProperty="cId" resultType="Integer" order="AFTER">
+            select last_insert_id()
+        </selectKey>
+        insert into check_file (c_id, c_time, c_text, c_state, app_id, p_id) values
+        (null,#{cTime},#{cText},#{cState},#{appId},#{pId})
+    </insert>
+
+    <!--  根据 ID 删除审核对象  -->
+    <delete id="deleteCheckFilesByCID" parameterType="Integer">
+        delete from check_file
+        where c_id = #{cId}
+    </delete>
+
+</mapper>

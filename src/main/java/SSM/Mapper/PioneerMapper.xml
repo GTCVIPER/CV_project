@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="SSM.Mapper.PioneerDAO">
+
+
+    <!--  先锋模范对象属性 与 数据库表的映射 传入对象 -->
+    <resultMap id="studyResult" type="SSM.pojo.PioneerFiles">
+        <id column="p_id" property="pId" javaType="Integer"/>
+        <result column="s_id" property="sId"/>
+<!--        <result column="c_id" property="cId"/>-->
+        <result column="p_adjunct" property="pAdjunct"/>
+        <result column="p_time" property="pTime"/>
+        <result column="p_get_time" property="pGetTime"/>
+        <result column="p_name" property="pName"/>
+        <result column="p_rank" property="pRank"/>
+
+        <association property="student" javaType="SSM.pojo.Student">
+            <id property="sId" column="s_id"/>
+            <result column="s_name" property="sName"/>
+            <result property="sSex" column="s_sex"/>
+            <result column="s_nation" property="sNation"/>
+            <result property="sClass" column="s_class"/>
+            <result column="s_tel" property="sTel"/>
+            <result column="s_politic" property="sPolitic"/>
+            <result column="s_state" property="sState"/>
+            <result column="s_register" property="sRegister"/>
+            <result column="s_apply" property="sApply"/>
+        </association>
+    </resultMap>
+
+
+
+    <!--  先锋模范对象属性 与 数据库表的映射  传入数据库 -->
+    <parameterMap id="studyParam" type="SSM.pojo.PioneerFiles">
+        <parameter property="sId" resultMap="studyResult"/>
+        <parameter property="pId" resultMap="studyResult"/>
+        <parameter property="pAdjunct" resultMap="studyResult"/>
+        <parameter property="pTime" resultMap="studyResult"/>
+        <parameter property="pGetTime" resultMap="studyResult"/>
+        <parameter property="pName" resultMap="studyResult"/>
+        <parameter property="pRank" resultMap="studyResult"/>
+
+    </parameterMap>
+
+
+    <!-- 查询所有先锋模范  -->
+    <select id="selectAllPioneerFiles" resultMap="studyResult">
+        select *
+        from pioneer_files
+</select>
+
+    <!-- 根据ID查询先锋模范  -->
+    <select id="selectPioneerFilesByPID" resultMap="studyResult" parameterType="Integer">
+        select *
+        from pioneer_files where p_id = #{pId}
+    </select>
+
+    <select id="selectPioneerFilesByPName" resultMap="studyResult" parameterType="String">
+        select *
+        from pioneer_files where p_name = #{pName}
+    </select>
+
+    <select id="selectStudentByPID" resultMap="studyResult" parameterType="Integer">
+        select s.*
+        from pioneer_files
+        join student s on pioneer_files.s_id = s.s_id
+        where p_id = #{pId}
+    </select>
+
+    <select id="selectAllPioneerFilesID" resultType="Integer">
+        select p_id
+        from pioneer_files
+    </select>
+
+    <!-- 批量删除先锋模范数据  -->
+    <delete id="deletePioneerFilesByPIDS" parameterMap="studyParam">
+        delete from pioneer_files
+    <where>
+            p_id in
+        <foreach collection="array" item="pId" separator="," open="(" close=")">
+                #{pId}
+        </foreach>
+    </where>
+    </delete>
+
+    <!-- 批量删除先锋模范数据  -->
+    <delete id="deletePioneerFilesBySIDS" parameterMap="studyParam">
+        delete from pioneer_files
+        <where>
+            s_id in
+            <foreach collection="array" item="sId" separator="," open="(" close=")">
+                #{sId}
+            </foreach>
+        </where>
+    </delete>
+
+
+    <!-- 更新先锋模范数据  -->
+    <update id="updatePioneerFiles" parameterMap="studyParam">
+        update pioneer_files
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="pRank!=null and pRank!=''">
+                p_rank=#{pRank},
+            </if>
+            <if test="pTime!=null">
+                p_rank=#{pRank},
+            </if>
+            <if test="pRank!=null">
+                p_rank=#{pRank},
+            </if>
+            <if test="pAdjunct!=null and pAdjunct!=''">
+                p_adjunct=#{pAdjunct},
+            </if>
+            <if test="pName!=null and pName!=''">
+                p_name=#{pName},
+            </if>
+        </trim>
+        where p_id = #{pId}
+    </update>
+
+        <!--  新增先锋模范数据  -->
+    <insert id="insertPioneerFiles" parameterMap="studyParam" keyProperty="p_id" useGeneratedKeys="true">
+        <selectKey keyProperty="pId" resultType="Integer" order="AFTER">
+            select last_insert_id()
+        </selectKey>
+        insert into pioneer_files (p_rank, s_id,p_adjunct, p_id, p_time, p_get_time, p_name) values
+        (#{pRank},#{sId},#{pAdjunct},null,#{pTime},#{pGetTime},#{pName})
+    </insert>
+
+    <!--  根据 ID 删除先锋模范  -->
+    <delete id="deletePioneerFilesByPID" parameterType="Integer">
+        delete from pioneer_files
+        where p_id = #{pId}
+    </delete>
+
+    <delete id="deletePioneerFilesBySID" parameterType="String">
+        delete from pioneer_files
+        where s_id = #{sId}
+    </delete>
+
+    <select id="selectAllPioneerFilesIDBySIDs" resultType="Integer" parameterMap="studyParam">
+        select p_id
+        from pioneer_files
+        <where>
+            s_id in
+            <foreach collection="array" item="sId" separator="," open="(" close=")">
+                #{sId}
+            </foreach>
+        </where>
+    </select>
+</mapper>

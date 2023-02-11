@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div class="demoTable">
+    搜索ID：
+    <div class="layui-inline">
+        <input class="layui-input" name="id" id="demoReload" autocomplete="off">
+    </div>
+    <button class="layui-btn" data-type="reload">搜索</button>
+</div>
+
+<table class="layui-hide" id="demo" lay-filter="test"></table>
+
+<script type="text/html" id="toolbarDemo">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm" lay-event="insert"><i class="layui-icon">&#xe654;</i> 添加</button>
+        <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delete"><i class="layui-icon">&#xe640;</i> 删除</button>
+    </div>
+</script>
+
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+</script>
+<script>
+    layui.use(['table','layer','form'], function() {
+        var table = layui.table;
+        var layer=layui.layer;
+        var form=layui.form;
+        form.render()//刷新表单
+        table.render({
+            elem: '#demo'
+            , url: "/ssm/sys/appinfo/find"
+            , toolbar: '#toolbarDemo' //开启头部工具栏，并为其绑定左侧模板
+            , defaultToolbar: ['filter', 'exports', 'print', { //自定义头部工具栏右侧图标。如无需自定义，去除该参数即可
+                title: '提示'
+                , layEvent: 'LAYTABLE_TIPS'
+                , icon: 'layui-icon-tips'
+            }]
+            , title: '应用数据表'
+            , cols: [[
+                {type: 'checkbox', fixed: 'left'}
+                , {field: 'aid', title: 'ID', fixed: 'left', unresize: true, sort: true}
+                , {field: 'corpName', title: '公司名称', edit: 'text'}
+                , {field: 'appName', title: '应用名称'}
+                , {field: 'appKey', title: 'APPKEY', edit: 'text'}
+                , {field: 'appSecret', title: '密钥', edit: 'text'}
+                , {
+                    field: 'redirectUrl', title: '回调地址', edit: 'text', templet: function (res) {
+                        return '<em>' + res.redirectUrl + '</em>'
+                    }
+                }
+                , {field: 'description', title: '细节描述'}
+                , {field: 'alimit', title: '限制访问次数'}
+                , {field: 'astate', title: '状态', templet(data){
+                        return (data.astate==1)?'<span class="layui-badge layui-bg-green">有效</span>'
+                            :'<span class="layui-badge layui-bg-red">无效</span>'
+                    }}
+                , {fixed: 'right', title: '操作', toolbar: '#barDemo'}
+            ]]
+            , page: {
+                limit:5
+                ,limits:[1,2,3,4,5]
+                ,first:'首页'
+                ,last:'尾页'
+                ,prev:'<i class="layui-icon layui-icon-prev"></i>'
+                ,next:'<i class="layui-icon layui-icon-next"></i>'
+                ,layout:['prev','page','next','count','limit','skip','refresh']
+            }//开启分页
+        });
+
+        //头工具栏事件
+        table.on('toolbar(test)',function (obj) {
+            switch (obj.event){
+                case 'insert': openEditWindow(null);
+                    break;
+                case 'delete':
+                    var data=table.checkStatus("demo").data;
+                    if(data.length>0){
+                        layer.confirm('真的要删除行吗？',function (index) {
+                            var params='';
+                            $.each(data,function (i,obj){
+                                params+='&ids='+obj.aid
+                            })
+                            $.ajax({
+                                url:'/ssm/sys/appinfo/del',
+                                data:params,
+                                method:'post',
+                                success:function (result) {
+                                    if(result.status){
+                                        table.reload('demo',{});
+                                    }else {
+                                        alert(result.message);
+                                    }
+                                    layer.close(index);
+                                }
+                            })
+                        })
+                    }
+                    break;
+            }
+        });
+        //编辑按钮事件
+        table.on('tool(test)',function (obj) {
+            var data=obj.data;//用于在编辑页面回显的数据
+
+            switch (obj.event){
+                case 'edit': {
+                    //打开编辑窗口
+                    openEditWindow(data);
+                    break;
+                }
+            }
+        })
+        function openEditWindow(data) {
+            layer.open({
+                type:1,
+                content:$('#appinfo-edit-layer').html(),
+                title:'编辑',
+                area: ['500px','400px'],
+                btn: ['提交','取消'],//可以添加无限个按钮
+                yes: function (index,layero) {
+                    layer.load();
+                    $.ajax({
+                        url:'/ssm/sys/appinfo/'+(data==null ? 'add':'update'),
+                        data:$('#appinfo-edit-form').serialize(),
+                        method: 'post',
+                        success:function (result) {
+                            if(result.status){
+                                table.reload('demo',{});
+                                layer.close(index);
+                            }else {
+                                alert(result.message);
+                            }
+                            layer.close(index);
+                            layer.closeAll('loading');
+                        }
+                    })
+                },
+                success:function (layero,index) {
+                    form.render()
+                    if(data!=null){
+                        form.val('appinfo-edit-form',data);
+                        form.val('appinfo-edit-form',{
+                            "state": data.state+""
+                        });
+                    }
+
+                    //反向查找并回显客户的所在公司
+                    $.ajax({
+                        url:'/ssm/sys/customer/all',
+                        method:'get',
+                        success:function (res) {
+                            /*
+                            生成option并插入到select中，但回显数据的时候，
+                            如果当前遍历的数据和应用上的数据一致，则应该默认选中
+                             */
+                            for(var i=0;i<res.length;i++){
+                                if(data && data.cusId && data.cusId==res[i].uid){
+                                    $("#cusId").append("<option selected value='"+res[i].uid+"'>"+res[i].nickname+"</option>")
+                                }else {
+                                    $("#cusId").append("<option value='"+res[i].uid+"'>"+res[i].nickname+"</option>")
+                                }
+                                form.render();
+                            }
+                        }
+                    })
+                }
+            });
+        }
+
+        var $ = layui.$, active = {
+            reload: function(){
+                var demoReload = $('#demoReload');
+
+                //执行重载
+                table.reload('testReload', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        key: {
+                            id: demoReload.val()
+                        }
+                    }
+                }, 'data');
+            }
+
+        };
+        $('.demoTable .layui-btn').on('click', function(){
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+    });
+</script>
+<script type="text/html" id="appinfo-edit-layer">
+    <form action="" method="post" id="appinfo-edit-form" style="width: 80%" class="layui-form"
+          lay-filter="appinfo-edit-form">
+                    <!--   表单中有隐藏的aid元素     -->
+        <input type="hidden" name="aid">
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">应用名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="appName" required lay-verify="required" placeholder="请输入应用名称"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">选择所属客户</label>
+            <div class="layui-input-block">
+                <select name="cusId" id="cusId"></select>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">APPKEY</label>
+            <div class="layui-input-block">
+                <input type="text" name="appKey" required lay-verify="required" placeholder="请输入APPKEY"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">密钥</label>
+            <div class="layui-input-block">
+                <input type="text" name="appSecret" required lay-verify="required" placeholder="请输入密钥"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">回调地址</label>
+            <div class="layui-input-block">
+                <input type="text" name="redirectUrl" required lay-verify="required" placeholder="请输入回调地址"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">限制访问次数</label>
+            <div class="layui-input-block">
+                <input type="number" name="alimit" required lay-verify="required" placeholder="请输入限制访问次数"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">描述</label>
+            <div class="layui-input-block">
+                <input type="text" name="description" required lay-verify="required" placeholder="请输入描述"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">状态</label>
+            <div class="layui-input-block">
+                <input type="radio" name="astate" title="有效" value="1" checked/>
+                <input type="radio" name="astate" title="无效" value="0"/>
+            </div>
+        </div>
+
+    </form>
+</script>
+<script type="text/html" id="appinfo-add-layer">
+    <form action="" method="post" id="appinfo-add-form" style="width: 80%" class="layui-form" lay-filter="appinfo-edit-form">
+        <input type="hidden" name="uid">
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">用户名</label>
+            <div class="layui-input-block">
+                <input type="text" name="username" required lay-verify="required" placeholder="请输入用户名"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="nickname" required lay-verify="required" placeholder="请输入公司名称"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">密码</label>
+            <div class="layui-input-block">
+                <input type="password" name="password" required lay-verify="required" placeholder="请输入密码"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">地址</label>
+            <div class="layui-input-block">
+                <input type="text" name="address" required lay-verify="required" placeholder="请输入地址"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">账户金额（元）</label>
+            <div class="layui-input-block">
+                <input type="number" name="money" required lay-verify="required" placeholder="请输入账号金额"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">状态</label>
+            <div class="layui-input-block">
+                <input type="radio" name="state" title="有效" value="1" checked/>
+                <input type="radio" name="state" title="无效" value="0"/>
+            </div>
+        </div>
+    </form>
+</script>
+</body>
+</html>
